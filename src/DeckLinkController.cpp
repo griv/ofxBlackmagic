@@ -75,6 +75,124 @@ vector<string> DeckLinkController::getDeviceNameList()  {
 }
 
 
+// select output device
+bool DeckLinkController::selectOutputDevice(int index)  {
+    IDeckLinkAttributes* deckLinkAttributes = NULL;
+    IDeckLinkDisplayModeIterator* displayModeIterator = NULL;
+    IDeckLinkDisplayMode* displayMode = NULL;
+    bool result = false;
+    
+    // Check index
+    if (index >= deviceList.size()) {
+        ofLogError("DeckLinkController") << "This application was unable to select the device.";
+//        goto bail;
+    }
+    
+    // A new device has been selected.
+    // Release the previous selected device and mode list
+    if (deckLinkInput != NULL)
+        deckLinkInput->Release();
+    
+    while(modeList.size() > 0) {
+        modeList.back()->Release();
+        modeList.pop_back();
+    }
+    
+    
+    // Get the IDeckLinkOutput for the selected device
+    if ((deviceList[index]->QueryInterface(IID_IDeckLinkOutput, (void**)&deckLinkOutput) != S_OK)) {
+        ofLogError("DeckLinkController") << "This application was unable to obtain IDeckLinkOutput for the selected device.";
+        deckLinkOutput = NULL;
+//        goto bail;
+    }
+
+    
+    HRESULT res = deckLinkOutput->CreateVideoFrame(1280, 720, 1280*4,bmdFormat8BitBGRA, bmdFrameFlagDefault, &videoFrame);
+    
+    if (res != S_OK) {
+        ofLogError("decklinkcontroller") << "create video frame error";
+    }
+
+    
+    //
+    // Retrieve and cache mode list
+    if (deckLinkOutput->GetDisplayModeIterator(&displayModeIterator) == S_OK) {
+        while (displayModeIterator->Next(&displayMode) == S_OK) {
+            modeList.push_back(displayMode);
+        }
+        displayModeIterator->Release();
+    }
+
+    
+    
+
+    
+    
+    //
+    // Check if input mode detection format is supported.
+
+//    supportFormatDetection = false; // assume unsupported until told otherwise
+//    if (deviceList[index]->QueryInterface(IID_IDeckLinkAttributes, (void**) &deckLinkAttributes) == S_OK) {
+//        if (deckLinkAttributes->GetFlag(BMDDeckLinkSupportsInputFormatDetection, &supportFormatDetection) != S_OK)
+//            supportFormatDetection = false;
+//        
+//        deckLinkAttributes->Release();
+//    }
+    
+    result = true;
+    
+bail:
+    return result;
+}
+
+
+void DeckLinkController::displayFrame(unsigned char* bytes) {
+    
+//    void ofxBlackMagicOutput::renderFrame(unsigned char* bytes, int length){
+    
+        void*	pFrame;
+        
+        videoFrame->GetBytes((void**)&pFrame);
+        
+        
+        memcpy(pFrame, bytes, 1280*720*4);
+        
+        HRESULT hr = deckLinkOutput->DisplayVideoFrameSync(videoFrame);
+    
+    
+    
+//        if (hr)
+//            uiTotalFrames++;
+//        // pDLOutput->WriteAudioSamplesSync(<#void *buffer#>, <#uint32_t sampleFrameCount#>, <#uint32_t *sampleFramesWritten#>)
+    
+        
+//    }
+
+    
+    
+    
+    
+    
+    
+  // TODO: create output frame!!!
+    
+//    unsigned char* outBytes = NULL;
+    
+    
+    
+// TODO: convert pixel data to videoframe
+//    videoFrame->GetBytes((void **) pixels.get);
+    
+    
+//    deckLinkOutput->DisplayVideoFrameSync(videoFrame);
+//    /* ULONG refCount = */ videoFrame->Release();
+//    videoFrame = NULL;
+    
+    
+}
+
+
+// select input device
 bool DeckLinkController::selectDevice(int index)  {
 	IDeckLinkAttributes* deckLinkAttributes = NULL;
 	IDeckLinkDisplayModeIterator* displayModeIterator = NULL;
@@ -204,6 +322,67 @@ unsigned long DeckLinkController::getDisplayModeBufferSize(BMDDisplayMode mode) 
 
 	return 0;
 }
+
+
+bool DeckLinkController::startExportWithIndex(int videoModeIndex)  {
+    // Get the IDeckLinkDisplayMode from the given index
+    if ((videoModeIndex < 0) || (videoModeIndex >= modeList.size())) {
+        ofLogError("DeckLinkController") << "An invalid display mode was selected.";
+        return false;
+    }
+    
+    return startExportWithMode(modeList[videoModeIndex]->GetDisplayMode());
+}
+
+bool DeckLinkController::startExportWithMode(BMDDisplayMode videoMode) {
+    int bufferSize = getDisplayModeBufferSize(videoMode);
+    
+    if(bufferSize != 0) {
+        vector<unsigned char> prototype(bufferSize);
+        buffer.setup(prototype);
+    } else{
+        ofLogError("DeckLinkController") << "DeckLinkController needs to be updated to support that mode.";
+        return false;
+    }
+    
+    BMDVideoInputFlags videoOutputFlags;
+    
+    // Enable input video mode detection if the device supports it
+    videoOutputFlags = bmdVideoOutputFlagDefault;
+    
+//    // Set capture callback
+//    deckLinkInput->SetCallback(this);
+    
+    // Enable the video output mode
+    if (deckLinkOutput->EnableVideoOutput(videoMode, videoOutputFlags) != S_OK) {
+        ofLogError("DeckLinkController") << "This application was unable to select the chosen video mode. Perhaps, the selected device is currently in-use.";
+        return false;
+    }
+    
+//    // Start the output
+//    if (deckLinkOutput->Ena() != S_OK) {
+//        ofLogError("DeckLinkController") << "This application was unable to start the capture. Perhaps, the selected device is currently in-use.";
+//        return false;
+//    }
+//    
+//    currentlyCapturing = true;
+    
+    return true;
+}
+
+void DeckLinkController::stopExport()  {
+
+    // Stop the export
+    deckLinkOutput->DisableVideoOutput();
+    
+//    // Delete capture callback
+//    deckLinkInput->SetCallback(NULL);
+//    
+//    currentlyCapturing = false;
+}
+
+
+
 
 bool DeckLinkController::startCaptureWithIndex(int videoModeIndex)  {
 	// Get the IDeckLinkDisplayMode from the given index

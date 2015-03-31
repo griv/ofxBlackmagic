@@ -17,6 +17,7 @@ private:
 	vector<IDeckLink*> deviceList;
 	IDeckLink* selectedDevice;
 	IDeckLinkInput* deckLinkInput;
+    IDeckLinkOutput* deckLinkOutput;
 	vector<IDeckLinkDisplayMode*> modeList;
 	
 	bool supportFormatDetection;
@@ -36,6 +37,7 @@ public:
 	vector<string> getDeviceNameList();
 	
 	bool selectDevice(int index);
+    bool selectOutputDevice(int index);
 	
 	vector<string> getDisplayModeNames();
 	bool isFormatDetectionEnabled();
@@ -46,6 +48,14 @@ public:
 	bool startCaptureWithMode(BMDDisplayMode videoMode);
 	bool startCaptureWithIndex(int videoModeIndex);
 	void stopCapture();
+
+    bool startExportWithMode(BMDDisplayMode videoMode);
+    bool startExportWithIndex(int videoModeIndex);
+    void stopExport();
+
+    IDeckLinkMutableVideoFrame* videoFrame;
+    
+    void displayFrame(unsigned char* bytes);
     
 	virtual HRESULT QueryInterface (REFIID iid, LPVOID *ppv) {return E_NOINTERFACE;}
 	virtual ULONG AddRef () {return 1;}

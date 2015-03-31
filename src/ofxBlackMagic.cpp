@@ -10,6 +10,40 @@ ofxBlackMagic::ofxBlackMagic()
 ,colorTexOld(true) {
 }
 
+bool ofxBlackMagic::setupOutput(int width, int height, float framerate, int device = 0) {
+    
+    controller.init();
+    
+    ofLogVerbose("ofxBlackMagic") << "num devices " << ofToString(controller.getDeviceCount());
+    vector<string> devices = controller.getDeviceNameList();
+    ofLogVerbose("ofxBlackMagic") << "devices: " << ofToString(devices);
+    
+    controller.selectOutputDevice(device);
+    
+    
+    vector<string> displayModes = controller.getDisplayModeNames();
+    ofLogVerbose("ofxBlackMagic") << "Available display modes: " << ofToString(displayModes);
+    BMDDisplayMode displayMode = controller.getDisplayMode(width, height, framerate);
+    
+    if(displayMode == bmdModeUnknown) {
+        ofLogError("ofxBlackMagic") << "Resolution and framerate combination not supported.";
+        return false;
+    }
+    
+    if(!controller.startExportWithMode(displayMode)) {
+        return false;
+    }
+    this->width = width, this->height = height;
+    return true;
+}
+
+void ofxBlackMagic::exportFrame(unsigned char* bytes) {
+    
+    controller.displayFrame(bytes);
+    
+}
+
+
 bool ofxBlackMagic::setup(int width, int height, float framerate) {
 	if(!controller.init()) {
 		return false;

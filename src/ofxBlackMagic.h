@@ -24,8 +24,12 @@ private:
 public:
 	ofxBlackMagic();
 	bool setup(int width, int height, float framerate);
+    bool setupOutput(int width, int height, float framerate, int device);
+    
 	void close(); // should call this in ofApp::exit()
 	bool update(); // returns true if there is a new frame
+    
+    void exportFrame(unsigned char* bytes);
 	
 	vector<unsigned char>& getYuvRaw(); // fastest
 	ofPixels& getGrayPixels(); // fast
