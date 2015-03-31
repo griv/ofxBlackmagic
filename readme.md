@@ -1,5 +1,10 @@
 # ofxBlackMagic is an addon for [openFrameworks](http://openframeworks.cc/)
 
+griv updates: adding output modes for use with multiple UltraStudio Mini Monitors
+
+griv testing: 4 x UltraStudio Mini Monitors on a MacPro trashcan
+
+
 updated to support 3840x2160 @ 29.97 input from the ULTRASTUDIO 4K
 
 
