@@ -85,7 +85,7 @@ bool DeckLinkController::selectOutputDevice(int index)  {
     // Check index
     if (index >= deviceList.size()) {
         ofLogError("DeckLinkController") << "This application was unable to select the device.";
-//        goto bail;
+        goto bail;
     }
     
     // A new device has been selected.
@@ -103,18 +103,16 @@ bool DeckLinkController::selectOutputDevice(int index)  {
     if ((deviceList[index]->QueryInterface(IID_IDeckLinkOutput, (void**)&deckLinkOutput) != S_OK)) {
         ofLogError("DeckLinkController") << "This application was unable to obtain IDeckLinkOutput for the selected device.";
         deckLinkOutput = NULL;
-//        goto bail;
+        goto bail;
     }
 
     
-    HRESULT res = deckLinkOutput->CreateVideoFrame(1280, 720, 1280*4,bmdFormat8BitBGRA, bmdFrameFlagDefault, &videoFrame);
-    
-    if (res != S_OK) {
-        ofLogError("decklinkcontroller") << "create video frame error";
+    if ((deckLinkOutput->CreateVideoFrame(1280, 720, 1280*4,bmdFormat8BitBGRA, bmdFrameFlagDefault, &videoFrame) != S_OK)) {
+        ofLogError("DeckLinkController") << "Create video frame error";
+        goto bail;
     }
 
     
-    //
     // Retrieve and cache mode list
     if (deckLinkOutput->GetDisplayModeIterator(&displayModeIterator) == S_OK) {
         while (displayModeIterator->Next(&displayMode) == S_OK) {
@@ -123,22 +121,6 @@ bool DeckLinkController::selectOutputDevice(int index)  {
         displayModeIterator->Release();
     }
 
-    
-    
-
-    
-    
-    //
-    // Check if input mode detection format is supported.
-
-//    supportFormatDetection = false; // assume unsupported until told otherwise
-//    if (deviceList[index]->QueryInterface(IID_IDeckLinkAttributes, (void**) &deckLinkAttributes) == S_OK) {
-//        if (deckLinkAttributes->GetFlag(BMDDeckLinkSupportsInputFormatDetection, &supportFormatDetection) != S_OK)
-//            supportFormatDetection = false;
-//        
-//        deckLinkAttributes->Release();
-//    }
-    
     result = true;
     
 bail:
